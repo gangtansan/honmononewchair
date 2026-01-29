@@ -135,24 +135,31 @@
             };
         }
 
-        function successTyping() {
-            alert("성공. 의자를 차지했다.");
-            hasChair = true; 
-            
-            const chair = document.getElementById('chair-' + currentChairId);
-            if(chair) {
-                chair.classList.add('taken');
-                chair.innerText = myIdentity; 
-            }
+function successTyping() {
+    // 1. 타이머부터 즉시 정지
+    if(timerInterval) clearInterval(timerInterval);
+    
+    // 2. 타이핑 창 즉시 숨기기 (이게 핵심!)
+    document.getElementById('typing-overlay').classList.add('hidden');
+    
+    // 3. 데이터 기록
+    hasChair = true; 
+    const chair = document.getElementById('chair-' + currentChairId);
+    if(chair) {
+        chair.classList.add('taken');
+        chair.innerText = myIdentity; 
+    }
 
-            // [오류 수정 핵심] 요소가 있는지 확인 후 실행
-            const container = document.getElementById('chair-wrapper-container');
-            const badge = document.getElementById('survival-badge');
-            if(container) container.classList.add('game-finished');
-            if(badge) badge.classList.remove('hidden');
+    // 4. 알림 (알림창이 뜨는 동안은 코드가 잠시 멈추므로 마지막에 배치)
+    alert("성공. 의자를 차지했다.");
 
-            closeTyping(); // 이제 정상적으로 닫힙니다.
-        }
+    // 5. 연출 (에러 방지를 위해 요소가 있을 때만 실행)
+    const container = document.getElementById('chair-wrapper-container');
+    if(container) {
+        container.style.filter = "blur(5px)";
+        container.style.pointerEvents = "none";
+    }
+}
 
         function failTyping() {
             alert("실패했다.");
@@ -167,3 +174,4 @@
     </script>
 </body>
 </html>
+
