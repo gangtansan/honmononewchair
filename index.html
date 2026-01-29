@@ -6,72 +6,19 @@
     <style>
         body { background: #1a1a1a; color: #d63031; font-family: 'serif'; text-align: center; margin: 0; overflow: hidden; }
         .hidden { display: none !important; }
-        
-        /* 1. 로그인 화면 */
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
         input[type="text"] { background: #000; border: 1px solid #d63031; color: #fff; padding: 10px; font-size: 18px; text-align: center; margin-bottom: 20px; }
-
-        /* 2. 게임 화면 */
         .chair-container { display: flex; justify-content: center; gap: 30px; margin-top: 100px; }
-        .chair { 
-            width: 120px; height: 160px; background: #2d3436; border: 3px solid #636e72; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            font-size: 16px; color: #fff; transition: 0.2s; padding: 10px;
-        }
+        .chair { width: 120px; height: 160px; background: #2d3436; border: 3px solid #636e72; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; transition: 0.2s; padding: 10px; }
         .chair.taken { background: #d63031; border-color: #ff7675; cursor: not-allowed; }
-
-        /* [중요] 화면 흐리게 연출 */
-        .game-finished {
-    filter: grayscale(0.8) brightness(0.4); /* 흐림 대신 흑백+어둡게 연출 */
-    pointer-events: none;
-    transition: 1s;
-}
-        #survival-badge {
-    position: fixed;
-    top: 20%; /* 위치를 위로 조금 올림 */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 40px;
-    color: #ff7675;
-    z-index: 200;
-    text-shadow: 0 0 15px #d63031;
-    pointer-events: none;
-}
-
-        /* 3. 타이핑 오버레이 */
+        .game-finished { filter: grayscale(0.8) brightness(0.4); pointer-events: none; transition: 1s; }
+        #survival-badge { position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; color: #ff7675; z-index: 200; text-shadow: 0 0 15px #d63031; pointer-events: none; }
         #typing-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
         #timer { font-size: 70px; color: #ff7675; margin-bottom: 20px; font-family: monospace; }
         #target-text { font-size: 28px; color: #fff; margin-bottom: 30px; }
         #typing-input { background: transparent; border: none; border-bottom: 2px solid #d63031; color: #fff; font-size: 24px; text-align: center; width: 80%; outline: none; }
-
-        .admin-controls { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; }
+        #admin-panel { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 15px; border: 1px solid #d63031; border-radius: 10px; z-index: 300; }
         button { padding: 10px 20px; cursor: pointer; background: #2d3436; color: #fff; border: 1px solid #d63031; }
-
-        #admin-panel {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
-    padding: 15px;
-    border: 1px solid #d63031;
-    border-radius: 10px;
-    z-index: 300; /* 최상단에 배치 */
-}
-
-.admin-controls button {
-    margin: 0 5px;
-    padding: 8px 15px;
-    background: #1a1a1a;
-    color: #d63031;
-    border: 1px solid #d63031;
-    cursor: pointer;
-}
-
-.admin-controls button:hover {
-    background: #d63031;
-    color: #fff;
-}
     </style>
 </head>
 <body>
@@ -84,6 +31,7 @@
 
     <div id="game-screen" class="hidden">
         <h2 id="user-display"></h2>
+        <div id="survival-badge" class="hidden">생존 확정</div>
         
         <div id="chair-wrapper-container">
             <div id="status-msg">의자를 선택하여 사과를 먹으십시오.</div>
@@ -91,37 +39,26 @@
         </div>
 
         <div id="admin-panel" class="hidden">
-        <div class="admin-controls">
-            <p style="color: #888; font-size: 12px;">교관 전용 제어기</p>
-            <button onclick="adminInit(4)">의자 4개 생성</button>
-            <button onclick="adminInit(3)">의자 3개 생성</button>
-            <button onclick="adminInit(2)">의자 2개 생성</button>
-            <button onclick="adminInit(1)">의자 1개 생성</button>
+            <button onclick="adminInit(4)">4개</button>
+            <button onclick="adminInit(3)">3개</button>
+            <button onclick="adminInit(2)">2개</button>
+            <button onclick="adminInit(1)">1개</button>
         </div>
-    </div>
-</div>
-
-        <div id="survival-badge" class="hidden">생존 확정</div>
 
         <div id="typing-overlay" class="hidden">
             <div id="timer">5.00</div>
             <div id="target-text">제시어</div>
             <input type="text" id="typing-input" autocomplete="off">
         </div>
-
-        <div class="admin-controls">
-            <button onclick="adminInit(4)">의자 4개 생성</button>
-            <button onclick="adminInit(3)">의자 3개 생성</button>
-            <button onclick="adminInit(2)">의자 2개 생성</button>
-        </div>
     </div>
 
     <audio id="main-bgm" src="bgm/Axe_Down.mp3" loop></audio>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // 1. 본인의 Firebase 설정값을 여기에 붙여넣으세요!
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // [여기에 본인 설정값을 꼭 넣으세요!]
   const firebaseConfig = {
     apiKey: "AIzaSyAIgLmntmWDJROXiEYY-hw0uCFBo0kFkIk",
     authDomain: "chairsteal-f092e.firebaseapp.com",
@@ -132,136 +69,118 @@
     appId: "1:447369461482:web:03d8b7b7f8652510d0a193",
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const gameRef = ref(db, 'game_state');
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const gameRef = ref(db, 'game_state');
 
-  // --- 기존 변수들 ---
-  const bgm = document.getElementById('main-bgm');
-  const phrases = ["나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다", "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들", "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다", "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"];
-  
-  let myIdentity = "";
-  let currentChairId = null;
-  let timerInterval = null;
-  let hasChair = false;
+        const bgm = document.getElementById('main-bgm');
+        const phrases = ["나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다", "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들", "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다", "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"];
+        
+        let myIdentity = "";
+        let currentChairId = null;
+        let timerInterval = null;
+        let hasChair = false;
 
-  // 2. 관리자용: 의자 초기화 (데이터베이스에 쓰기)
-  window.adminInit = (count) => {
-    const chairs = {};
-    for(let i=1; i<=count; i++) {
-        chairs['chair' + i] = { occupant: "" };
-    }
-    set(gameRef, {
-        chairCount: count,
-        chairs: chairs,
-        resetToken: Date.now() // 리셋 신호를 모든 클라이언트에 알림
-    });
-  };
+        // 접속 함수 (window에 등록)
+        window.startApp = () => {
+            const name = document.getElementById('user-name').value.trim();
+            if(!name) { alert("이름을 입력해줘."); return; }
+            myIdentity = name;
+            
+            // 관리자 비번 체크
+            if(myIdentity === "학생회54") {
+                document.getElementById('admin-panel').classList.remove('hidden');
+            }
 
-  // 3. 실시간 감시: 데이터가 변하면 모든 유저의 화면이 바뀜
-  onValue(gameRef, (snapshot) => {
-    const data = snapshot.val();
-    if(!data) return;
+            bgm.volume = 0.1;
+            bgm.play().catch(() => console.log("음악 재생은 클릭 후에 가능합니다."));
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('user-display').innerText = "생존자: " + myIdentity;
+        };
 
-    // 관리자가 의자를 새로 깔았을 때 (리셋)
-    const wrapper = document.getElementById('chair-wrapper');
-    wrapper.innerHTML = '';
-    
-    // 리셋 시 효과 초기화
-    hasChair = false;
-    const container = document.getElementById('chair-wrapper-container');
-    const badge = document.getElementById('survival-badge');
-    if(container) { container.style.filter = "none"; container.style.pointerEvents = "auto"; }
-    if(badge) badge.classList.add('hidden');
+        // 관리자 초기화 (window에 등록)
+        window.adminInit = (count) => {
+            const chairs = {};
+            for(let i=1; i<=count; i++) chairs['chair' + i] = { occupant: "" };
+            set(gameRef, { chairCount: count, chairs: chairs, resetTime: Date.now() });
+        };
 
-    // 의자 목록 그리기
-    Object.entries(data.chairs).forEach(([id, info]) => {
-        const div = document.createElement('div');
-        div.className = `chair ${info.occupant ? 'taken' : ''}`;
-        div.innerText = info.occupant ? info.occupant : "빈 의자";
-        div.onclick = () => openTyping(id, info.occupant);
-        wrapper.appendChild(div);
-    });
-  });
+        // 데이터 감시 및 화면 업데이트
+        onValue(gameRef, (snapshot) => {
+            const data = snapshot.val();
+            if(!data) return;
 
-  // 4. 의자 클릭 및 성공 로직 수정
-  window.openTyping = (id, occupant) => {
-    if (hasChair) { alert("이미 사과를 먹었습니다."); return; }
-    if (occupant) return; // 이미 주인이 있는 경우 클릭 방지
+            const wrapper = document.getElementById('chair-wrapper');
+            wrapper.innerHTML = '';
+            
+            // 리셋 시 효과 해제
+            hasChair = false;
+            const container = document.getElementById('chair-wrapper-container');
+            const badge = document.getElementById('survival-badge');
+            if(container) { container.style.filter = "none"; container.style.pointerEvents = "auto"; }
+            if(badge) badge.classList.add('hidden');
 
-    currentChairId = id;
-    const overlay = document.getElementById('typing-overlay');
-    const target = document.getElementById('target-text');
-    document.getElementById('typing-input').value = '';
-    target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-    overlay.classList.remove('hidden');
-    document.getElementById('typing-input').focus();
-    startTimer();
-  };
+            // 실시간 의자 그리기
+            Object.entries(data.chairs).forEach(([id, info]) => {
+                const div = document.createElement('div');
+                div.className = `chair ${info.occupant ? 'taken' : ''}`;
+                div.innerText = info.occupant ? info.occupant : "빈 의자";
+                div.onclick = () => window.openTyping(id, info.occupant);
+                wrapper.appendChild(div);
+            });
+        });
 
-  function startTimer() {
-    let timeLeft = 5.00;
-    const timerDisp = document.getElementById('timer');
-    const input = document.getElementById('typing-input');
-    const targetText = document.getElementById('target-text').innerText;
-    
-    timerInterval = setInterval(() => {
-        timeLeft -= 0.01;
-        timerDisp.innerText = timeLeft.toFixed(2);
-        if(timeLeft <= 0) { clearInterval(timerInterval); failTyping(); }
-    }, 10);
+        // 타이핑 창 열기
+        window.openTyping = (id, occupant) => {
+            if (hasChair) { alert("이미 생존했습니다."); return; }
+            if (occupant) return;
 
-    input.oninput = () => {
-        if(input.value === targetText) {
-            clearInterval(timerInterval);
-            successTyping();
+            currentChairId = id;
+            const overlay = document.getElementById('typing-overlay');
+            const target = document.getElementById('target-text');
+            const input = document.getElementById('typing-input');
+            
+            target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            input.value = '';
+            overlay.classList.remove('hidden');
+            input.focus();
+            startTimer();
+        };
+
+        function startTimer() {
+            let timeLeft = 5.00;
+            const timerDisp = document.getElementById('timer');
+            const input = document.getElementById('typing-input');
+            const targetText = document.getElementById('target-text').innerText;
+            
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.01;
+                timerDisp.innerText = timeLeft.toFixed(2);
+                if(timeLeft <= 0) { clearInterval(timerInterval); failTyping(); }
+            }, 10);
+
+            input.oninput = () => {
+                if(input.value === targetText) { clearInterval(timerInterval); successTyping(); }
+            };
         }
-    };
-  }
 
-  function successTyping() {
-    // Firebase 데이터베이스 업데이트 (내 이름을 의자에 박기)
-    update(ref(db, `game_state/chairs/${currentChairId}`), {
-        occupant: myIdentity
-    });
+        function successTyping() {
+            update(ref(db, `game_state/chairs/${currentChairId}`), { occupant: myIdentity });
+            hasChair = true;
+            document.getElementById('typing-overlay').classList.add('hidden');
+            alert("의자를 차지했습니다.");
+            
+            const container = document.getElementById('chair-wrapper-container');
+            if(container) { container.style.filter = "grayscale(0.8) brightness(0.4)"; container.style.pointerEvents = "none"; }
+            document.getElementById('survival-badge').classList.remove('hidden');
+        }
 
-    hasChair = true;
-    document.getElementById('typing-overlay').classList.add('hidden');
-    alert("생존 성공.");
-
-    const container = document.getElementById('chair-wrapper-container');
-    const badge = document.getElementById('survival-badge');
-    if(container) { container.style.filter = "blur(5px)"; container.style.pointerEvents = "none"; }
-    if(badge) badge.classList.remove('hidden');
-  }
-
-  function failTyping() {
-    alert("실패.");
-    document.getElementById('typing-overlay').classList.add('hidden');
-  }
-
-  // 로그인 기능 연결
-  window.startApp = () => {
-    const name = document.getElementById('user-name').value.trim();
-    if(!name) return;
-    myIdentity = name;
-    
-    // [보안 로직] 이름이 '관리자'이거나 특정 번호일 때만 버튼 노출
-    if(myIdentity === "학생회54") { // 본인만 아는 비밀번호로 설정하세요
-        document.getElementById('admin-panel').classList.remove('hidden');
-    }
-
-    bgm.volume = 0.1;
-    bgm.play();
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('game-screen').classList.remove('hidden');
-    document.getElementById('user-display').innerText = "생존자: " + myIdentity;
-</script>
-
+        function failTyping() {
+            alert("실패.");
+            document.getElementById('typing-overlay').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
-
-
-
-
-
