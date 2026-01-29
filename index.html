@@ -136,29 +136,41 @@
         }
 
 function successTyping() {
-    // 1. 타이머부터 즉시 정지
+    // 1. 타이머와 창 닫기를 최우선으로 실행 (절대 안 멈추게 함)
     if(timerInterval) clearInterval(timerInterval);
-    
-    // 2. 타이핑 창 즉시 숨기기 (이게 핵심!)
     document.getElementById('typing-overlay').classList.add('hidden');
     
-    // 3. 데이터 기록
+    // 2. 상태 기록
     hasChair = true; 
+    
+    // 3. 의자 상태 업데이트
     const chair = document.getElementById('chair-' + currentChairId);
     if(chair) {
         chair.classList.add('taken');
         chair.innerText = myIdentity; 
     }
 
-    // 4. 알림 (알림창이 뜨는 동안은 코드가 잠시 멈추므로 마지막에 배치)
-    alert("성공. 의자를 차지했다.");
+    // 4. 성공 알림
+    alert("성공! 의자를 확보했습니다.");
 
-    // 5. 연출 (에러 방지를 위해 요소가 있을 때만 실행)
-    const container = document.getElementById('chair-wrapper-container');
-    if(container) {
-        container.style.filter = "blur(5px)";
-        container.style.pointerEvents = "none";
+    // 5. 화면 흐리게 연출 (에러가 나더라도 이미 창은 닫힌 후라 안전함)
+    try {
+        const container = document.getElementById('chair-wrapper-container');
+        const badge = document.getElementById('survival-badge');
+        
+        if(container) {
+            container.style.filter = "blur(5px)";
+            container.style.pointerEvents = "none";
+        }
+        if(badge) {
+            badge.classList.remove('hidden');
+        }
+    } catch(e) {
+        console.log("연출 요소가 없어 실행하지 않음");
     }
+
+    // 마지막으로 한 번 더 확인차 닫기 호출
+    closeTyping();
 }
 
         function failTyping() {
@@ -174,4 +186,5 @@ function successTyping() {
     </script>
 </body>
 </html>
+
 
