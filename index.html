@@ -59,136 +59,152 @@
         </div>
 
         <div class="admin-controls">
-            <button onclick="initChairs(4)">4개</button>
-            <button onclick="initChairs(3)">3개</button>
-            <button onclick="initChairs(2)">2개</button>
+            <button onclick="adminInit(4)">의자 4개 생성</button>
+            <button onclick="adminInit(3)">의자 3개 생성</button>
+            <button onclick="adminInit(2)">의자 2개 생성</button>
         </div>
     </div>
 
     <audio id="main-bgm" src="bgm/Axe_Down.mp3" loop></audio>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    <script>
-        const bgm = document.getElementById('main-bgm');
-        const phrases = ["나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다", "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들", "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다", "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"];
+  // 1. 본인의 Firebase 설정값을 여기에 붙여넣으세요!
+  const firebaseConfig = {
+    apiKey: "AIzaSyAIgLmntmWDJROXiEYY-hw0uCFBo0kFkIk",
+    authDomain: "chairsteal-f092e.firebaseapp.com",
+    databaseURL: "https://chairsteal-f092e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "chairsteal-f092e",
+    storageBucket: "chairsteal-f092e.firebasestorage.app",
+    messagingSenderId: "447369461482",
+    appId: "1:447369461482:web:03d8b7b7f8652510d0a193",
+  };
 
-        let myIdentity = "";
-        let currentChairId = null;
-        let timerInterval = null;
-        let hasChair = false; // 중복 방지 변수
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const gameRef = ref(db, 'game_state');
 
-        function startApp() {
-            const inputName = document.getElementById('user-name').value.trim();
-            if(!inputName) { alert("이름을 입력해줘."); return; }
-            myIdentity = inputName;
-            bgm.volume = 0.1;
-            bgm.play();
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('user-display').innerText = "접속 중: " + myIdentity;
-            initChairs(4);
-        }
+  // --- 기존 변수들 ---
+  const bgm = document.getElementById('main-bgm');
+  const phrases = ["나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다", "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들", "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다", "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"];
+  
+  let myIdentity = "";
+  let currentChairId = null;
+  let timerInterval = null;
+  let hasChair = false;
 
-function initChairs(count) {
-    // 1. 모든 흐림 효과 및 상태 초기화
-    hasChair = false; // 다시 의자를 잡을 수 있게 상태 리셋
-    
-    const container = document.getElementById('chair-wrapper-container');
-    const badge = document.getElementById('survival-badge');
-    
-    if(container) {
-        container.style.filter = "none";      // 흐림 효과 제거
-        container.style.pointerEvents = "auto"; // 클릭 차단 해제
+  // 2. 관리자용: 의자 초기화 (데이터베이스에 쓰기)
+  window.adminInit = (count) => {
+    const chairs = {};
+    for(let i=1; i<=count; i++) {
+        chairs['chair' + i] = { occupant: "" };
     }
-    if(badge) {
-        badge.classList.add('hidden'); // '생존 확정' 문구 숨기기
-    }
+    set(gameRef, {
+        chairCount: count,
+        chairs: chairs,
+        resetToken: Date.now() // 리셋 신호를 모든 클라이언트에 알림
+    });
+  };
 
-    // 2. 새로운 의자 깔기
+  // 3. 실시간 감시: 데이터가 변하면 모든 유저의 화면이 바뀜
+  onValue(gameRef, (snapshot) => {
+    const data = snapshot.val();
+    if(!data) return;
+
+    // 관리자가 의자를 새로 깔았을 때 (리셋)
     const wrapper = document.getElementById('chair-wrapper');
     wrapper.innerHTML = '';
-    for(let i=1; i<=count; i++) {
-        const div = document.createElement('div');
-        div.className = 'chair';
-        div.id = 'chair-' + i;
-        div.innerText = '빈 의자';
-        div.onclick = () => openTyping(i);
-        wrapper.appendChild(div);
-    }
-}
-
-        function openTyping(id) {
-            if (hasChair) { alert("이미 사과를 먹었습니다."); return; }
-            const chair = document.getElementById('chair-' + id);
-            if(chair.classList.contains('taken')) return;
-
-            currentChairId = id;
-            const overlay = document.getElementById('typing-overlay');
-            const target = document.getElementById('target-text');
-            const input = document.getElementById('typing-input');
-            
-            target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-            input.value = '';
-            overlay.classList.remove('hidden');
-            input.focus();
-            startTimer();
-        }
-
-        function startTimer() {
-            let timeLeft = 5.00;
-            const timerDisp = document.getElementById('timer');
-            const input = document.getElementById('typing-input');
-            const targetText = document.getElementById('target-text').innerText;
-            
-            timerInterval = setInterval(() => {
-                timeLeft -= 0.01;
-                timerDisp.innerText = timeLeft.toFixed(2);
-                if(timeLeft <= 0) { clearInterval(timerInterval); failTyping(); }
-            }, 10);
-
-            input.oninput = () => {
-                if(input.value === targetText) { clearInterval(timerInterval); successTyping(); }
-            };
-        }
-
-// 성공 로직 (이전과 동일하지만 확실히 하기 위해 다시 확인)
-function successTyping() {
-    if(timerInterval) clearInterval(timerInterval);
-    document.getElementById('typing-overlay').classList.add('hidden');
     
-    hasChair = true; 
-    const chair = document.getElementById('chair-' + currentChairId);
-    if(chair) {
-        chair.classList.add('taken');
-        chair.innerText = myIdentity; 
-    }
+    // 리셋 시 효과 초기화
+    hasChair = false;
+    const container = document.getElementById('chair-wrapper-container');
+    const badge = document.getElementById('survival-badge');
+    if(container) { container.style.filter = "none"; container.style.pointerEvents = "auto"; }
+    if(badge) badge.classList.add('hidden');
 
-    alert("성공! 의자를 확보했습니다.");
+    // 의자 목록 그리기
+    Object.entries(data.chairs).forEach(([id, info]) => {
+        const div = document.createElement('div');
+        div.className = `chair ${info.occupant ? 'taken' : ''}`;
+        div.innerText = info.occupant ? info.occupant : "빈 의자";
+        div.onclick = () => openTyping(id, info.occupant);
+        wrapper.appendChild(div);
+    });
+  });
+
+  // 4. 의자 클릭 및 성공 로직 수정
+  window.openTyping = (id, occupant) => {
+    if (hasChair) { alert("이미 사과를 먹었습니다."); return; }
+    if (occupant) return; // 이미 주인이 있는 경우 클릭 방지
+
+    currentChairId = id;
+    const overlay = document.getElementById('typing-overlay');
+    const target = document.getElementById('target-text');
+    document.getElementById('typing-input').value = '';
+    target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+    overlay.classList.remove('hidden');
+    document.getElementById('typing-input').focus();
+    startTimer();
+  };
+
+  function startTimer() {
+    let timeLeft = 5.00;
+    const timerDisp = document.getElementById('timer');
+    const input = document.getElementById('typing-input');
+    const targetText = document.getElementById('target-text').innerText;
+    
+    timerInterval = setInterval(() => {
+        timeLeft -= 0.01;
+        timerDisp.innerText = timeLeft.toFixed(2);
+        if(timeLeft <= 0) { clearInterval(timerInterval); failTyping(); }
+    }, 10);
+
+    input.oninput = () => {
+        if(input.value === targetText) {
+            clearInterval(timerInterval);
+            successTyping();
+        }
+    };
+  }
+
+  function successTyping() {
+    // Firebase 데이터베이스 업데이트 (내 이름을 의자에 박기)
+    update(ref(db, `game_state/chairs/${currentChairId}`), {
+        occupant: myIdentity
+    });
+
+    hasChair = true;
+    document.getElementById('typing-overlay').classList.add('hidden');
+    alert("생존 성공.");
 
     const container = document.getElementById('chair-wrapper-container');
     const badge = document.getElementById('survival-badge');
-    
-    if(container) {
-        container.style.filter = "blur(5px)"; // 성공 시 다시 흐려짐
-        container.style.pointerEvents = "none";
-    }
+    if(container) { container.style.filter = "blur(5px)"; container.style.pointerEvents = "none"; }
     if(badge) badge.classList.remove('hidden');
+  }
 
-    closeTyping();
-}
+  function failTyping() {
+    alert("실패.");
+    document.getElementById('typing-overlay').classList.add('hidden');
+  }
 
-        function failTyping() {
-            alert("실패했다.");
-            closeTyping();
-        }
+  // 로그인 기능 연결
+  window.startApp = () => {
+    const name = document.getElementById('user-name').value.trim();
+    if(!name) return;
+    myIdentity = name;
+    bgm.volume = 0.1;
+    bgm.play();
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('user-display').innerText = "생존자: " + myIdentity;
+  };
+</script>
 
-        function closeTyping() {
-            document.getElementById('typing-overlay').classList.add('hidden');
-            currentChairId = null;
-            if(timerInterval) clearInterval(timerInterval);
-        }
-    </script>
 </body>
 </html>
+
 
 
 
