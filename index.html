@@ -54,20 +54,19 @@
 
     <audio id="main-bgm" src="bgm/Axe_Down.mp3" loop></audio>
 
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // [여기에 본인 설정값을 꼭 넣으세요!]
-  const firebaseConfig = {
-    apiKey: "AIzaSyAIgLmntmWDJROXiEYY-hw0uCFBo0kFkIk",
-    authDomain: "chairsteal-f092e.firebaseapp.com",
-    databaseURL: "https://chairsteal-f092e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "chairsteal-f092e",
-    storageBucket: "chairsteal-f092e.firebasestorage.app",
-    messagingSenderId: "447369461482",
-    appId: "1:447369461482:web:03d8b7b7f8652510d0a193",
-  };
+        const firebaseConfig = {
+            apiKey: "AIzaSyAIgLmntmWDJROXiEYY-hw0uCFBo0kFkIk",
+            authDomain: "chairsteal-f092e.firebaseapp.com",
+            databaseURL: "https://chairsteal-f092e-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "chairsteal-f092e",
+            storageBucket: "chairsteal-f092e.firebasestorage.app",
+            messagingSenderId: "447369461482",
+            appId: "1:447369461482:web:03d8b7b7f8652510d0a193",
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -81,52 +80,55 @@
         let timerInterval = null;
         let hasChair = false;
 
-        // 접속 함수 (window에 등록)
+        // 접속 함수
         window.startApp = () => {
-            const name = document.getElementById('user-name').value.trim();
+            const nameInput = document.getElementById('user-name');
+            const name = nameInput.value.trim();
             if(!name) { alert("이름을 입력해줘."); return; }
             myIdentity = name;
             
-            // 관리자 비번 체크
             if(myIdentity === "학생회54") {
                 document.getElementById('admin-panel').classList.remove('hidden');
             }
 
             bgm.volume = 0.1;
-            bgm.play().catch(() => console.log("음악 재생은 클릭 후에 가능합니다."));
+            bgm.play().catch(() => console.log("BGM 재생 대기 중..."));
             
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
             document.getElementById('user-display').innerText = "생존자: " + myIdentity;
         };
 
-        // 관리자 초기화 (window에 등록)
-const chairs = {};
-    for(let i=1; i<=count; i++) {
-        chairs['chair' + i] = { occupant: "" };
-    }
-    set(gameRef, { 
-        chairCount: count, 
-        chairs: chairs, 
-        resetTime: Date.now() 
-    });
-};
-        // 데이터 감시 및 화면 업데이트
+        // [오류 수정됨] 관리자 초기화 함수
+        window.adminInit = (count) => {
+            const chairs = {};
+            for(let i=1; i<=count; i++) {
+                chairs['chair' + i] = { occupant: "" };
+            }
+            set(gameRef, { 
+                chairCount: count, 
+                chairs: chairs, 
+                resetTime: Date.now() 
+            }).then(() => {
+                console.log(count + "개의 의자 생성 완료");
+            }).catch((error) => {
+                alert("데이터 전송 실패: " + error.message);
+            });
+        };
+
         onValue(gameRef, (snapshot) => {
             const data = snapshot.val();
-            if(!data) return;
+            if(!data || !data.chairs) return;
 
             const wrapper = document.getElementById('chair-wrapper');
             wrapper.innerHTML = '';
             
-            // 리셋 시 효과 해제
             hasChair = false;
             const container = document.getElementById('chair-wrapper-container');
             const badge = document.getElementById('survival-badge');
             if(container) { container.style.filter = "none"; container.style.pointerEvents = "auto"; }
             if(badge) badge.classList.add('hidden');
 
-            // 실시간 의자 그리기
             Object.entries(data.chairs).forEach(([id, info]) => {
                 const div = document.createElement('div');
                 div.className = `chair ${info.occupant ? 'taken' : ''}`;
@@ -136,7 +138,6 @@ const chairs = {};
             });
         });
 
-        // 타이핑 창 열기
         window.openTyping = (id, occupant) => {
             if (hasChair) { alert("이미 생존했습니다."); return; }
             if (occupant) return;
@@ -150,6 +151,8 @@ const chairs = {};
             input.value = '';
             overlay.classList.remove('hidden');
             input.focus();
+            
+            if(timerInterval) clearInterval(timerInterval);
             startTimer();
         };
 
@@ -162,11 +165,17 @@ const chairs = {};
             timerInterval = setInterval(() => {
                 timeLeft -= 0.01;
                 timerDisp.innerText = timeLeft.toFixed(2);
-                if(timeLeft <= 0) { clearInterval(timerInterval); failTyping(); }
+                if(timeLeft <= 0) { 
+                    clearInterval(timerInterval); 
+                    failTyping(); 
+                }
             }, 10);
 
             input.oninput = () => {
-                if(input.value === targetText) { clearInterval(timerInterval); successTyping(); }
+                if(input.value === targetText) { 
+                    clearInterval(timerInterval); 
+                    successTyping(); 
+                }
             };
         }
 
@@ -177,7 +186,10 @@ const chairs = {};
             alert("의자를 차지했습니다.");
             
             const container = document.getElementById('chair-wrapper-container');
-            if(container) { container.style.filter = "grayscale(0.8) brightness(0.4)"; container.style.pointerEvents = "none"; }
+            if(container) { 
+                container.style.filter = "grayscale(0.8) brightness(0.4)"; 
+                container.style.pointerEvents = "none"; 
+            }
             document.getElementById('survival-badge').classList.remove('hidden');
         }
 
@@ -188,4 +200,5 @@ const chairs = {};
     </script>
 </body>
 </html>
+
 
