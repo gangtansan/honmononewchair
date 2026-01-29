@@ -101,12 +101,16 @@
         };
 
         // 관리자 초기화 (window에 등록)
-        window.adminInit = (count) => {
-            const chairs = {};
-            for(let i=1; i<=count; i++) chairs['chair' + i] = { occupant: "" };
-            set(gameRef, { chairCount: count, chairs: chairs, resetTime: Date.now() });
-        };
-
+const chairs = {};
+    for(let i=1; i<=count; i++) {
+        chairs['chair' + i] = { occupant: "" };
+    }
+    set(gameRef, { 
+        chairCount: count, 
+        chairs: chairs, 
+        resetTime: Date.now() 
+    });
+};
         // 데이터 감시 및 화면 업데이트
         onValue(gameRef, (snapshot) => {
             const data = snapshot.val();
@@ -184,3 +188,4 @@
     </script>
 </body>
 </html>
+
