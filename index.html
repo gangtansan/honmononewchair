@@ -21,8 +21,22 @@
         .chair.taken { background: #d63031; border-color: #ff7675; cursor: not-allowed; }
 
         /* [중요] 화면 흐리게 연출 */
-        .game-finished { filter: blur(5px); pointer-events: none; transition: 1s; }
-        #survival-badge { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; color: #ff7675; z-index: 200; font-weight: bold; text-shadow: 2px 2px 10px #000; pointer-events: none; }
+        .game-finished {
+    filter: grayscale(0.8) brightness(0.4); /* 흐림 대신 흑백+어둡게 연출 */
+    pointer-events: none;
+    transition: 1s;
+}
+        #survival-badge {
+    position: fixed;
+    top: 20%; /* 위치를 위로 조금 올림 */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: #ff7675;
+    z-index: 200;
+    text-shadow: 0 0 15px #d63031;
+    pointer-events: none;
+}
 
         /* 3. 타이핑 오버레이 */
         #typing-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
@@ -32,6 +46,32 @@
 
         .admin-controls { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; }
         button { padding: 10px 20px; cursor: pointer; background: #2d3436; color: #fff; border: 1px solid #d63031; }
+
+        #admin-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border: 1px solid #d63031;
+    border-radius: 10px;
+    z-index: 300; /* 최상단에 배치 */
+}
+
+.admin-controls button {
+    margin: 0 5px;
+    padding: 8px 15px;
+    background: #1a1a1a;
+    color: #d63031;
+    border: 1px solid #d63031;
+    cursor: pointer;
+}
+
+.admin-controls button:hover {
+    background: #d63031;
+    color: #fff;
+}
     </style>
 </head>
 <body>
@@ -49,6 +89,17 @@
             <div id="status-msg">의자를 선택하여 사과를 먹으십시오.</div>
             <div class="chair-container" id="chair-wrapper"></div>
         </div>
+
+        <div id="admin-panel" class="hidden">
+        <div class="admin-controls">
+            <p style="color: #888; font-size: 12px;">교관 전용 제어기</p>
+            <button onclick="adminInit(4)">의자 4개 생성</button>
+            <button onclick="adminInit(3)">의자 3개 생성</button>
+            <button onclick="adminInit(2)">의자 2개 생성</button>
+            <button onclick="adminInit(1)">의자 1개 생성</button>
+        </div>
+    </div>
+</div>
 
         <div id="survival-badge" class="hidden">생존 확정</div>
 
@@ -194,16 +245,22 @@
     const name = document.getElementById('user-name').value.trim();
     if(!name) return;
     myIdentity = name;
+    
+    // [보안 로직] 이름이 '관리자'이거나 특정 번호일 때만 버튼 노출
+    if(myIdentity === "학생회54") { // 본인만 아는 비밀번호로 설정하세요
+        document.getElementById('admin-panel').classList.remove('hidden');
+    }
+
     bgm.volume = 0.1;
     bgm.play();
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
     document.getElementById('user-display').innerText = "생존자: " + myIdentity;
-  };
 </script>
 
 </body>
 </html>
+
 
 
 
