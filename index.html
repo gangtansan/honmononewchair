@@ -153,23 +153,46 @@
             };
         }
 
-        function successTyping() {
-            alert("성공. 의자를 차지했다.");
-            const chair = document.getElementById('chair-' + currentChairId);
-            chair.classList.add('taken');
-            chair.innerText = myIdentity; // 차지한 사람의 이름 표시
-            closeTyping();
-        }
+// 1. 상단 변수 선언부에 추가
+let hasChair = false; // 의자 점유 여부를 추적
 
-        function failTyping() {
-            alert("실패. 의자는 주인을 찾지 못했다.");
-            closeTyping();
-        }
+// 2. 타이핑 창을 열기 전 체크 로직 (수정)
+function openTyping(id) {
+    const chair = document.getElementById('chair-' + id);
+    
+    // 이미 의자를 가지고 있는지 확인
+    if (hasChair) {
+        alert("이미 사과를 먹었습니다. 바구니는 이미 찼습니다.");
+        return;
+    }
 
-        function closeTyping() {
-            document.getElementById('typing-overlay').classList.add('hidden');
-            currentChairId = null;
-        }
+    if (chair.classList.contains('taken')) return;
+
+    currentChairId = id;
+    const overlay = document.getElementById('typing-overlay');
+    const target = document.getElementById('target-text');
+    const input = document.getElementById('typing-input');
+    
+    target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+    input.value = '';
+    overlay.classList.remove('hidden');
+    input.focus();
+
+    startTimer();
+}
+
+// 3. 성공 시 상태 변경 (수정)
+function successTyping() {
+    alert("성공. 의자를 차지했다.");
+    hasChair = true; // 이제 이 학생은 다른 의자를 누를 수 없음
+    
+    const chair = document.getElementById('chair-' + currentChairId);
+    chair.classList.add('taken');
+    chair.innerText = myIdentity; 
+    
+    closeTyping();
+}
     </script>
 </body>
+
 </html>
