@@ -68,131 +68,131 @@
 
     <audio id="main-bgm" src="bgm/Axe_Down.mp3" loop></audio>
 
-    <script>
-        const bgm = document.getElementById('main-bgm');
-        const phrases = [
-            "나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다",
-            "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들",
-            "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다",
-            "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"
-        ];
+<script>
+    // --- [1. 설정 및 변수 선언부] ---
+    const bgm = document.getElementById('main-bgm');
+    const phrases = [
+        "나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다",
+        "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들",
+        "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다",
+        "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"
+    ];
 
-        let myIdentity = "";
-        let currentChairId = null;
-        let timerInterval = null;
+    let myIdentity = "";      // 내 이름
+    let currentChairId = null;// 현재 클릭한 의자 번호
+    let timerInterval = null; // 타이머 시간
+    let hasChair = false;     // [중요] 이미 의자를 가졌는지 여부 (초깃값: 없음)
 
-        function startApp() {
-            const inputName = document.getElementById('user-name').value.trim();
-            if(!inputName) {
-                alert("이름이나 번호를 입력해줘.");
-                return;
-            }
-            myIdentity = inputName;
-            
-            bgm.volume = 0.1;
-            bgm.play();
-            
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            document.getElementById('user-display').innerText = "접속 중: " + myIdentity;
-            
-            initChairs(4);
+    // --- [2. 앱 시작 및 환경 설정] ---
+    function startApp() {
+        const inputName = document.getElementById('user-name').value.trim();
+        if(!inputName) {
+            alert("이름이나 번호를 입력해줘.");
+            return;
         }
-
-        function initChairs(count) {
-            const wrapper = document.getElementById('chair-wrapper');
-            wrapper.innerHTML = '';
-            for(let i=1; i<=count; i++) {
-                const div = document.createElement('div');
-                div.className = 'chair';
-                div.id = 'chair-' + i;
-                div.innerText = '빈 의자';
-                div.onclick = () => openTyping(i);
-                wrapper.appendChild(div);
-            }
-        }
-
-        function openTyping(id) {
-            const chair = document.getElementById('chair-' + id);
-            if(chair.classList.contains('taken')) return;
-
-            currentChairId = id;
-            const overlay = document.getElementById('typing-overlay');
-            const target = document.getElementById('target-text');
-            const input = document.getElementById('typing-input');
-            
-            target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-            input.value = '';
-            overlay.classList.remove('hidden');
-            input.focus();
-
-            startTimer();
-        }
-
-        function startTimer() {
-            let timeLeft = 5.00; // 5초로 변경
-            const timerDisp = document.getElementById('timer');
-            const input = document.getElementById('typing-input');
-            const targetText = document.getElementById('target-text').innerText;
-            
-            timerInterval = setInterval(() => {
-                timeLeft -= 0.01;
-                timerDisp.innerText = timeLeft.toFixed(2);
-
-                if(timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    failTyping();
-                }
-            }, 10);
-
-            input.oninput = () => {
-                if(input.value === targetText) {
-                    clearInterval(timerInterval);
-                    successTyping();
-                }
-            };
-        }
-
-// 1. 상단 변수 선언부에 추가
-let hasChair = false; // 의자 점유 여부를 추적
-
-// 2. 타이핑 창을 열기 전 체크 로직 (수정)
-function openTyping(id) {
-    const chair = document.getElementById('chair-' + id);
-    
-    // 이미 의자를 가지고 있는지 확인
-    if (hasChair) {
-        alert("이미 사과를 먹었습니다. 바구니는 이미 찼습니다.");
-        return;
+        myIdentity = inputName;
+        
+        bgm.volume = 0.1; // 볼륨 10%
+        bgm.play();
+        
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('user-display').innerText = "접속 중: " + myIdentity;
+        
+        initChairs(4); // 의자 4개 생성
     }
 
-    if (chair.classList.contains('taken')) return;
+    // --- [3. 의자 생성 함수] ---
+    function initChairs(count) {
+        const wrapper = document.getElementById('chair-wrapper');
+        wrapper.innerHTML = '';
+        for(let i=1; i<=count; i++) {
+            const div = document.createElement('div');
+            div.className = 'chair';
+            div.id = 'chair-' + i;
+            div.innerText = '빈 의자';
+            div.onclick = () => openTyping(i); // 의자 클릭 시 타이핑 시작
+            wrapper.appendChild(div);
+        }
+    }
 
-    currentChairId = id;
-    const overlay = document.getElementById('typing-overlay');
-    const target = document.getElementById('target-text');
-    const input = document.getElementById('typing-input');
-    
-    target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-    input.value = '';
-    overlay.classList.remove('hidden');
-    input.focus();
+    // --- [4. 의자 클릭 시 실행 (검사 로직)] ---
+    function openTyping(id) {
+        // [체크] 이미 의자가 있는 사람은 여기서 바로 컷!
+        if (hasChair === true) {
+            alert("이미 사과를 먹었습니다. 다른 이에게 양보하십시오.");
+            return; 
+        }
 
-    startTimer();
-}
+        const chair = document.getElementById('chair-' + id);
+        if(chair.classList.contains('taken')) return; // 이미 누가 차지한 의자면 무시
 
-// 3. 성공 시 상태 변경 (수정)
-function successTyping() {
-    alert("성공. 의자를 차지했다.");
-    hasChair = true; // 이제 이 학생은 다른 의자를 누를 수 없음
-    
-    const chair = document.getElementById('chair-' + currentChairId);
-    chair.classList.add('taken');
-    chair.innerText = myIdentity; 
-    
-    closeTyping();
-}
+        currentChairId = id;
+        const overlay = document.getElementById('typing-overlay');
+        const target = document.getElementById('target-text');
+        const input = document.getElementById('typing-input');
+        
+        target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+        input.value = '';
+        overlay.classList.remove('hidden');
+        input.focus();
+
+        startTimer();
+    }
+
+    // --- [5. 5초 타이머 로직] ---
+    function startTimer() {
+        let timeLeft = 5.00; // 5초
+        const timerDisp = document.getElementById('timer');
+        const input = document.getElementById('typing-input');
+        const targetText = document.getElementById('target-text').innerText;
+        
+        timerInterval = setInterval(() => {
+            timeLeft -= 0.01;
+            timerDisp.innerText = timeLeft.toFixed(2);
+
+            if(timeLeft <= 0) {
+                clearInterval(timerInterval);
+                failTyping();
+            }
+        }, 10);
+
+        input.oninput = () => {
+            if(input.value === targetText) {
+                clearInterval(timerInterval);
+                successTyping();
+            }
+        };
+    }
+
+    // --- [6. 성공 및 실패 결과 처리] ---
+    function successTyping() {
+        alert("성공. 의자를 차지했다.");
+        
+        hasChair = true; // [기록] 이제 이 사람은 다음 클릭이 안 됨
+        
+        const chair = document.getElementById('chair-' + currentChairId);
+        chair.classList.add('taken');
+        chair.innerText = myIdentity; // 의자에 내 이름 표시
+
+        // 화면 연출 추가
+        document.getElementById('chair-wrapper-container').classList.add('game-finished');
+        document.getElementById('survival-badge').classList.remove('hidden');
+
+        closeTyping();
+    }
+
+    function failTyping() {
+        alert("실패. 의자는 주인을 찾지 못했다.");
+        closeTyping();
+    }
+
+    function closeTyping() {
+        document.getElementById('typing-overlay').classList.add('hidden');
+        currentChairId = null;
+    }
     </script>
 </body>
 
 </html>
+
