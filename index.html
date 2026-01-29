@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>쿠다모노카 고교 - 의자뺏기</title>
+    <style>
+        body { background: #1a1a1a; color: #d63031; font-family: 'serif'; text-align: center; margin: 0; overflow: hidden; }
+        .hidden { display: none !important; }
+        
+        /* 로그인 화면 */
+        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        input[type="text"] { 
+            background: #000; border: 1px solid #d63031; color: #fff; 
+            padding: 10px; font-size: 18px; text-align: center; margin-bottom: 20px;
+        }
+
+        /* 의자 스타일 */
+        .chair-container { display: flex; justify-content: center; gap: 30px; margin-top: 100px; }
+        .chair { 
+            width: 120px; height: 160px; background: #2d3436; border: 3px solid #636e72; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            font-size: 16px; color: #fff; transition: 0.2s; word-break: keep-all; padding: 10px;
+        }
+        .chair.taken { background: #d63031; border-color: #ff7675; cursor: not-allowed; }
+
+        /* 타이핑 오버레이 */
+        #typing-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 100;
+        }
+        #timer { font-size: 70px; color: #ff7675; margin-bottom: 20px; font-family: monospace; }
+        #target-text { font-size: 28px; color: #fff; margin-bottom: 30px; }
+        #typing-input { 
+            background: transparent; border: none; border-bottom: 2px solid #d63031; 
+            color: #fff; font-size: 24px; text-align: center; width: 80%; outline: none;
+        }
+
+        .admin-controls { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; background: #2d3436; color: #fff; border: 1px solid #d63031; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h1>쿠다모노카 고교</h1>
+        <p>출석 번호 또는 이름을 입력하십시오.</p>
+        <input type="text" id="user-name" placeholder="예: 03번 학생" maxlength="10">
+        <button onclick="startApp()">접속</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <h2 id="user-display"></h2>
+        <div class="chair-container" id="chair-wrapper"></div>
+
+        <div id="typing-overlay" class="hidden">
+            <div id="timer">5.00</div>
+            <div id="target-text">제시어</div>
+            <input type="text" id="typing-input" autocomplete="off">
+        </div>
+
+        <div class="admin-controls">
+            <button onclick="initChairs(4)">4개</button>
+            <button onclick="initChairs(3)">3개</button>
+            <button onclick="initChairs(2)">2개</button>
+        </div>
+    </div>
+
+    <audio id="main-bgm" src="bgm/Axe_Down.mp3" loop></audio>
+
+    <script>
+        const bgm = document.getElementById('main-bgm');
+        const phrases = [
+            "나는 껍질이 아니다", "까마귀님의 가호가 있기를", "붉은 과실이 익어간다",
+            "씨앗까지 씹어 삼켜라", "검은 깃털이 목구멍을 찌른다", "우리 바구니엔 반짝이는 과일들",
+            "썩은 부위는 도려내야 한다", "모두 담기에 바구니가 작다", "낙과는 거름이 된다",
+            "도망쳐도 까마귀님의 시야 안", "버려지는 것은 네가 되기를", "혓바닥 끝에 닿는 철분 맛"
+        ];
+
+        let myIdentity = "";
+        let currentChairId = null;
+        let timerInterval = null;
+
+        function startApp() {
+            const inputName = document.getElementById('user-name').value.trim();
+            if(!inputName) {
+                alert("이름이나 번호를 입력해줘.");
+                return;
+            }
+            myIdentity = inputName;
+            
+            bgm.volume = 0.1;
+            bgm.play();
+            
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('user-display').innerText = "접속 중: " + myIdentity;
+            
+            initChairs(4);
+        }
+
+        function initChairs(count) {
+            const wrapper = document.getElementById('chair-wrapper');
+            wrapper.innerHTML = '';
+            for(let i=1; i<=count; i++) {
+                const div = document.createElement('div');
+                div.className = 'chair';
+                div.id = 'chair-' + i;
+                div.innerText = '빈 의자';
+                div.onclick = () => openTyping(i);
+                wrapper.appendChild(div);
+            }
+        }
+
+        function openTyping(id) {
+            const chair = document.getElementById('chair-' + id);
+            if(chair.classList.contains('taken')) return;
+
+            currentChairId = id;
+            const overlay = document.getElementById('typing-overlay');
+            const target = document.getElementById('target-text');
+            const input = document.getElementById('typing-input');
+            
+            target.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+            input.value = '';
+            overlay.classList.remove('hidden');
+            input.focus();
+
+            startTimer();
+        }
+
+        function startTimer() {
+            let timeLeft = 5.00; // 5초로 변경
+            const timerDisp = document.getElementById('timer');
+            const input = document.getElementById('typing-input');
+            const targetText = document.getElementById('target-text').innerText;
+            
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.01;
+                timerDisp.innerText = timeLeft.toFixed(2);
+
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    failTyping();
+                }
+            }, 10);
+
+            input.oninput = () => {
+                if(input.value === targetText) {
+                    clearInterval(timerInterval);
+                    successTyping();
+                }
+            };
+        }
+
+        function successTyping() {
+            alert("성공. 의자를 차지했다.");
+            const chair = document.getElementById('chair-' + currentChairId);
+            chair.classList.add('taken');
+            chair.innerText = myIdentity; // 차지한 사람의 이름 표시
+            closeTyping();
+        }
+
+        function failTyping() {
+            alert("실패. 의자는 주인을 찾지 못했다.");
+            closeTyping();
+        }
+
+        function closeTyping() {
+            document.getElementById('typing-overlay').classList.add('hidden');
+            currentChairId = null;
+        }
+    </script>
+</body>
+</html>
